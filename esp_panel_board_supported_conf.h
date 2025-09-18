@@ -62,8 +62,10 @@
 /*
  * Elecrow (https://www.elecrow.com):
  *
+ *  -BOARD_ELECROW_CROWPANEL_5_0 (ELECROW_CROWPANEL_5_0): https://www.elecrow.com/crowpanel-advance-5-0-hmi-esp32-ai-display-800x480-ips-artificial-intelligent-touch-screen.html
  *  -BOARD_ELECROW_CROWPANEL_7_0 (ELECROW_CROWPANEL_7_0): https://www.elecrow.com/esp32-display-7-inch-hmi-display-rgb-tft-lcd-touch-screen-support-lvgl.html
  */
+// #define BOARD_ELECROW_CROWPANEL_5_0
 // #define BOARD_ELECROW_CROWPANEL_7_0
 
 /*

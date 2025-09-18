@@ -82,6 +82,7 @@
         + defined(BOARD_ESPRESSIF_ESP32_S3_USB_OTG) \
         + defined(BOARD_ESPRESSIF_ESP32_P4_FUNCTION_EV_BOARD) \
         /* Elecrow */ \
+        + defined(BOARD_ELECROW_CROWPANEL_5_0) \
         + defined(BOARD_ELECROW_CROWPANEL_7_0) \
         /* M5Stack */ \
         + defined(BOARD_M5STACK_M5CORE2) \
@@ -153,6 +154,8 @@
     #elif defined(BOARD_ESPRESSIF_ESP32_P4_FUNCTION_EV_BOARD)
         #include "espressif/BOARD_ESPRESSIF_ESP32_P4_FUNCTION_EV_BOARD.h"
     /* Elecrow */
+    #elif defined(BOARD_ELECROW_CROWPANEL_5_0)
+        #include "elecrow/BOARD_ELECROW_CROWPANEL_5_0.h"
     #elif defined(BOARD_ELECROW_CROWPANEL_7_0)
         #include "elecrow/BOARD_ELECROW_CROWPANEL_7_0.h"
     /* M5Stack */
