@@ -66,6 +66,7 @@ esp_err_t esp_lcd_touch_new_i2c_gt911(const esp_lcd_panel_io_handle_t io, const 
 {
     ESP_LOGI(TAG, "version: %d.%d.%d", ESP_LCD_TOUCH_GT911_VER_MAJOR, ESP_LCD_TOUCH_GT911_VER_MINOR,
              ESP_LCD_TOUCH_GT911_VER_PATCH);
+    ESP_LOGI(TAG, "Starting GT911 initialization...");
     esp_err_t ret = ESP_OK;
 
     assert(io != NULL);
@@ -96,6 +97,13 @@ esp_err_t esp_lcd_touch_new_i2c_gt911(const esp_lcd_panel_io_handle_t io, const 
     /* Save config */
     memcpy(&esp_lcd_touch_gt911->config, config, sizeof(esp_lcd_touch_config_t));
     esp_lcd_touch_io_gt911_config_t *gt911_config = (esp_lcd_touch_io_gt911_config_t *)esp_lcd_touch_gt911->config.driver_data;
+    
+    ESP_LOGI(TAG, "GT911 config - RST pin: %d, INT pin: %d", esp_lcd_touch_gt911->config.rst_gpio_num, esp_lcd_touch_gt911->config.int_gpio_num);
+    if (gt911_config) {
+        ESP_LOGI(TAG, "GT911 I2C address configured: 0x%02X", gt911_config->dev_addr);
+    } else {
+        ESP_LOGW(TAG, "GT911 config driver_data is NULL");
+    }
 
     /* Prepare pin for touch controller reset */
     if (esp_lcd_touch_gt911->config.rst_gpio_num != GPIO_NUM_NC) {
@@ -119,32 +127,48 @@ esp_err_t esp_lcd_touch_new_i2c_gt911(const esp_lcd_panel_io_handle_t io, const 
         ret = gpio_config(&int_gpio_config);
         ESP_GOTO_ON_ERROR(ret, err, TAG, "GPIO config failed");
 
+        ESP_LOGI(TAG, "Setting RST pin %d to level %d", esp_lcd_touch_gt911->config.rst_gpio_num, esp_lcd_touch_gt911->config.levels.reset);
         ESP_RETURN_ON_ERROR(gpio_set_level(esp_lcd_touch_gt911->config.rst_gpio_num, esp_lcd_touch_gt911->config.levels.reset), TAG, "GPIO set level error!");
+        ESP_LOGI(TAG, "Setting INT pin %d to LOW (0) for address configuration", esp_lcd_touch_gt911->config.int_gpio_num);
         ESP_RETURN_ON_ERROR(gpio_set_level(esp_lcd_touch_gt911->config.int_gpio_num, 0), TAG, "GPIO set level error!");
         vTaskDelay(pdMS_TO_TICKS(10));
 
         /* Select I2C addr, set output high or low */
         uint32_t gpio_level;
+        ESP_LOGI(TAG, "Configuring I2C address - requested: 0x%02X, backup: 0x%02X, default: 0x%02X", 
+                 gt911_config->dev_addr, ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS_BACKUP, ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS);
         if (ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS_BACKUP == gt911_config->dev_addr) {
             gpio_level = 1;
+            ESP_LOGI(TAG, "Using BACKUP address 0x%02X -> INT pin will be set HIGH", ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS_BACKUP);
         } else if (ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS == gt911_config->dev_addr) {
             gpio_level = 0;
+            ESP_LOGI(TAG, "Using DEFAULT address 0x%02X -> INT pin will be set LOW", ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS);
         } else {
             gpio_level = 0;
-            ESP_LOGE(TAG, "Addr (0x%X) is invalid", gt911_config->dev_addr);
+            ESP_LOGE(TAG, "Invalid address 0x%02X! Using default 0x%02X -> INT pin will be set LOW", gt911_config->dev_addr, ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS);
         }
+        ESP_LOGI(TAG, "Setting INT pin %d to level %d for address selection", esp_lcd_touch_gt911->config.int_gpio_num, gpio_level);
         ESP_RETURN_ON_ERROR(gpio_set_level(esp_lcd_touch_gt911->config.int_gpio_num, gpio_level), TAG, "GPIO set level error!");
         vTaskDelay(pdMS_TO_TICKS(1));
 
+        ESP_LOGI(TAG, "Releasing RST pin %d (setting to %d) to complete address configuration", esp_lcd_touch_gt911->config.rst_gpio_num, !esp_lcd_touch_gt911->config.levels.reset);
         ESP_RETURN_ON_ERROR(gpio_set_level(esp_lcd_touch_gt911->config.rst_gpio_num, !esp_lcd_touch_gt911->config.levels.reset), TAG, "GPIO set level error!");
         vTaskDelay(pdMS_TO_TICKS(10));
 
+        ESP_LOGI(TAG, "Waiting 50ms for GT911 to stabilize with configured I2C address...");
         vTaskDelay(pdMS_TO_TICKS(50));
+        ESP_LOGI(TAG, "GT911 address configuration sequence completed");
     } else {
-        ESP_LOGW(TAG, "Unable to initialize the I2C address");
+        ESP_LOGW(TAG, "Unable to initialize the I2C address - missing config or pins not configured");
+        ESP_LOGW(TAG, "GT911 config present: %s, RST pin: %d, INT pin: %d", 
+                 gt911_config ? "YES" : "NO", 
+                 esp_lcd_touch_gt911->config.rst_gpio_num, 
+                 esp_lcd_touch_gt911->config.int_gpio_num);
         /* Reset controller */
+        ESP_LOGI(TAG, "Performing simple reset without address configuration");
         ret = touch_gt911_reset(esp_lcd_touch_gt911);
         ESP_GOTO_ON_ERROR(ret, err, TAG, "GT911 reset failed");
+        ESP_LOGI(TAG, "Simple reset completed");
     }
 
     /* Prepare pin for touch interrupt */
@@ -164,7 +188,11 @@ esp_err_t esp_lcd_touch_new_i2c_gt911(const esp_lcd_panel_io_handle_t io, const 
     }
 
     /* Read status and config info */
+    ESP_LOGI(TAG, "Attempting to read GT911 configuration and verify communication...");
     ret = touch_gt911_read_cfg(esp_lcd_touch_gt911);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "GT911 communication successful - initialization completed");
+    }
     ESP_GOTO_ON_ERROR(ret, err, TAG, "GT911 init failed");
 
     *out_touch = esp_lcd_touch_gt911;
@@ -380,10 +408,16 @@ static esp_err_t touch_gt911_reset(esp_lcd_touch_handle_t tp)
     assert(tp != NULL);
 
     if (tp->config.rst_gpio_num != GPIO_NUM_NC) {
+        ESP_LOGI(TAG, "Performing GT911 reset using RST pin %d", tp->config.rst_gpio_num);
+        ESP_LOGI(TAG, "Setting RST to %d (reset state)", tp->config.levels.reset);
         ESP_RETURN_ON_ERROR(gpio_set_level(tp->config.rst_gpio_num, tp->config.levels.reset), TAG, "GPIO set level error!");
         vTaskDelay(pdMS_TO_TICKS(10));
+        ESP_LOGI(TAG, "Setting RST to %d (normal state)", !tp->config.levels.reset);
         ESP_RETURN_ON_ERROR(gpio_set_level(tp->config.rst_gpio_num, !tp->config.levels.reset), TAG, "GPIO set level error!");
         vTaskDelay(pdMS_TO_TICKS(10));
+        ESP_LOGI(TAG, "GT911 reset completed");
+    } else {
+        ESP_LOGW(TAG, "GT911 reset requested but RST pin is not configured (GPIO_NUM_NC)");
     }
 
     return ESP_OK;
@@ -392,35 +426,70 @@ static esp_err_t touch_gt911_reset(esp_lcd_touch_handle_t tp)
 static esp_err_t touch_gt911_read_cfg(esp_lcd_touch_handle_t tp)
 {
     uint8_t buf[4];
+    esp_err_t ret;
 
     assert(tp != NULL);
 
-    ESP_RETURN_ON_ERROR(touch_gt911_i2c_read(tp, ESP_LCD_TOUCH_GT911_PRODUCT_ID_REG, (uint8_t *)&buf[0], 3), TAG, "GT911 read error!");
-    ESP_RETURN_ON_ERROR(touch_gt911_i2c_read(tp, ESP_LCD_TOUCH_GT911_CONFIG_REG, (uint8_t *)&buf[3], 1), TAG, "GT911 read error!");
+    ESP_LOGI(TAG, "Reading GT911 Product ID from register 0x%04X...", ESP_LCD_TOUCH_GT911_PRODUCT_ID_REG);
+    ret = touch_gt911_i2c_read(tp, ESP_LCD_TOUCH_GT911_PRODUCT_ID_REG, (uint8_t *)&buf[0], 3);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read Product ID: %s (0x%x)", esp_err_to_name(ret), ret);
+        return ret;
+    }
+    
+    ESP_LOGI(TAG, "Reading GT911 Config Version from register 0x%04X...", ESP_LCD_TOUCH_GT911_CONFIG_REG);
+    ret = touch_gt911_i2c_read(tp, ESP_LCD_TOUCH_GT911_CONFIG_REG, (uint8_t *)&buf[3], 1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read Config Version: %s (0x%x)", esp_err_to_name(ret), ret);
+        return ret;
+    }
 
-    ESP_LOGI(TAG, "TouchPad_ID:0x%02x,0x%02x,0x%02x", buf[0], buf[1], buf[2]);
-    ESP_LOGI(TAG, "TouchPad_Config_Version:%d", buf[3]);
+    ESP_LOGI(TAG, "GT911 Product ID: 0x%02x,0x%02x,0x%02x (should be ASCII '911')", buf[0], buf[1], buf[2]);
+    ESP_LOGI(TAG, "GT911 Config Version: %d", buf[3]);
+    
+    // Verificar si los datos son válidos
+    if (buf[0] == '9' && buf[1] == '1' && buf[2] == '1') {
+        ESP_LOGI(TAG, "GT911 Product ID verification: SUCCESS");
+    } else {
+        ESP_LOGW(TAG, "GT911 Product ID verification: FAILED - expected '911', got '%c%c%c'", buf[0], buf[1], buf[2]);
+    }
 
     return ESP_OK;
 }
 
 static esp_err_t touch_gt911_i2c_read(esp_lcd_touch_handle_t tp, uint16_t reg, uint8_t *data, uint8_t len)
 {
+    esp_err_t ret;
     assert(tp != NULL);
     assert(data != NULL);
 
+    ESP_LOGD(TAG, "I2C READ: register=0x%04X, length=%d", reg, len);
     /* Read data */
-    return esp_lcd_panel_io_rx_param(tp->io, reg, data, len);
+    ret = esp_lcd_panel_io_rx_param(tp->io, reg, data, len);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "I2C READ FAILED: register=0x%04X, error=%s (0x%x)", reg, esp_err_to_name(ret), ret);
+    } else {
+        ESP_LOGD(TAG, "I2C READ SUCCESS: register=0x%04X, length=%d", reg, len);
+    }
+    return ret;
 }
 
 static esp_err_t touch_gt911_i2c_write(esp_lcd_touch_handle_t tp, uint16_t reg, uint8_t data)
 {
+    esp_err_t ret;
     assert(tp != NULL);
 
+    ESP_LOGD(TAG, "I2C WRITE: register=0x%04X, data=0x%02X", reg, data);
     // *INDENT-OFF*
     /* Write data */
-    return esp_lcd_panel_io_tx_param(tp->io, reg, (uint8_t[]){data}, 1);
+    ret = esp_lcd_panel_io_tx_param(tp->io, reg, (uint8_t[]){data}, 1);
     // *INDENT-ON*
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "I2C WRITE FAILED: register=0x%04X, data=0x%02X, error=%s (0x%x)", reg, data, esp_err_to_name(ret), ret);
+    } else {
+        ESP_LOGD(TAG, "I2C WRITE SUCCESS: register=0x%04X, data=0x%02X", reg, data);
+    }
+    return ret;
 }
 
 #endif // ESP_PANEL_DRIVERS_TOUCH_ENABLE_GT911

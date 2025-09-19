@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /**
- * @file   BOARD_CROWPANEL_7_0.h
+ * @file   BOARD_ELECROW_CROWPANEL_7_0.h
  * @brief  Configuration file for Elecrow CROWPANEL_7_0
  * @author lboue
  * @link   https://www.elecrow.com/esp32-display-7-inch-hmi-display-rgb-tft-lcd-touch-screen-support-lvgl.html

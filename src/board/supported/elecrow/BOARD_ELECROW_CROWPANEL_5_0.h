@@ -6,7 +6,7 @@
 /**
  * @file   BOARD_ELECROW_CROWPANEL_5_0.h
  * @brief  Configuration file for Elecrow CrowPanel Advance 5.0 HMI ESP32-S3
- * @author Copilot
+ * @author Matias Gibbons
  * @link   https://www.elecrow.com/crowpanel-advance-5-0-hmi-esp32-ai-display-800x480-ips-artificial-intelligent-touch-screen.html
  */
 
@@ -15,10 +15,10 @@
 // *INDENT-OFF*
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////// Please update the following macros to configure general parameters ///////////////////////////
+//////////////////////////// Please update the following macros to configure general panel /////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
- * @brief Board name (format: "Manufacturer:Model")
+ * @brief Board name
  */
 #define ESP_PANEL_BOARD_NAME                "Elecrow:CROWPANEL_5_0"
 
@@ -58,6 +58,7 @@
  * https://docs.espressif.com/projects/esp-iot-solution/en/latest/display/lcd/index.html
  */
 #if ESP_PANEL_BOARD_LCD_BUS_TYPE == ESP_PANEL_BUS_TYPE_RGB
+
     /**
      * @brief RGB bus
      */
@@ -89,12 +90,10 @@
                                                             // The size should satisfy `size * N = LCD_width * LCD_height`,
                                                             // where N is an even number.
                                                             // For more details, see: https://github.com/esp-arduino-libs/ESP32_Display_Panel/blob/master/docs/FAQ.md#how-to-fix-screen-drift-issue-when-driving-rgb-lcd-with-esp32-s3
-
-    // CrowPanel Advance 5.0 specific GPIO assignments
-    #define ESP_PANEL_BOARD_LCD_RGB_IO_HSYNC        (40)    // Your hardware: GPIO_NUM_40
-    #define ESP_PANEL_BOARD_LCD_RGB_IO_VSYNC        (41)    // Your hardware: GPIO_NUM_41
-    #define ESP_PANEL_BOARD_LCD_RGB_IO_DE           (42)    // Your hardware: GPIO_NUM_42 (Data Enable)
-    #define ESP_PANEL_BOARD_LCD_RGB_IO_PCLK         (39)    // Your hardware: GPIO_NUM_39
+    #define ESP_PANEL_BOARD_LCD_RGB_IO_HSYNC        (40)
+    #define ESP_PANEL_BOARD_LCD_RGB_IO_VSYNC        (41)
+    #define ESP_PANEL_BOARD_LCD_RGB_IO_DE           (42)    // -1 if not used
+    #define ESP_PANEL_BOARD_LCD_RGB_IO_PCLK         (39)
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DISP         (-1)    // -1 if not used. Typically set to -1
 
                                                             // The following sheet shows the mapping of ESP GPIOs to
@@ -127,41 +126,12 @@
 #endif // ESP_PANEL_BOARD_LCD_BUS_TYPE
 
 /**
- * @brief LCD vendor initialization commands
- *
- * Vendor specific initialization can be different between manufacturers, should consult the LCD supplier for
- * initialization sequence code. Please uncomment and change the following macro definitions. Otherwise, the LCD driver
- * will use the default initialization sequence code.
- *
- * The initialization sequence can be specified in two formats:
- * 1. Raw format:
- *    {command, (uint8_t []){data0, data1, ...}, data_size, delay_ms}
- * 2. Helper macros:
- *    - ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(delay_ms, command, {data0, data1, ...})
- *    - ESP_PANEL_LCD_CMD_WITH_NONE_PARAM(delay_ms, command)
- */
-/*
-#define ESP_PANEL_BOARD_LCD_VENDOR_INIT_CMD()                       \
-    {                                                               \
-        {0xFF, (uint8_t []){0x77, 0x01, 0x00, 0x00, 0x10}, 5, 0},   \
-        {0xC0, (uint8_t []){0x3B, 0x00}, 2, 0},                     \
-        {0xC1, (uint8_t []){0x0D, 0x02}, 2, 0},                     \
-        {0x29, (uint8_t []){0x00}, 0, 120},                         \
-        or
-        ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xFF, {0x77, 0x01, 0x00, 0x00, 0x10}), \
-        ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xC0, {0x3B, 0x00}),                   \
-        ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xC1, {0x0D, 0x02}),                   \
-        ESP_PANEL_LCD_CMD_WITH_NONE_PARAM(120, 0x29),                               \
-    }
-*/
-
-/**
  * @brief LCD color configuration
  */
-#define ESP_PANEL_BOARD_LCD_COLOR_BITS          (ESP_PANEL_LCD_COLOR_BITS_RGB565)
+#define ESP_PANEL_BOARD_LCD_COLOR_BITS          (ESP_PANEL_LCD_COLOR_BITS_RGB888)
                                                         // ESP_PANEL_LCD_COLOR_BITS_RGB565/RGB666/RGB888
 #define ESP_PANEL_BOARD_LCD_COLOR_BGR_ORDER     (0)     // 0: RGB, 1: BGR
-#define ESP_PANEL_BOARD_LCD_COLOR_INEVRT_BIT    (1)     // 0/1
+#define ESP_PANEL_BOARD_LCD_COLOR_INEVRT_BIT    (0)     // 0/1
 
 /**
  * @brief LCD transformation configuration
@@ -227,14 +197,13 @@
     /* For host */
     #define ESP_PANEL_BOARD_TOUCH_I2C_CLK_HZ            (400 * 1000)
                                                                 // Typically set to 400K
-    #define ESP_PANEL_BOARD_TOUCH_I2C_SCL_PULLUP        (0)     // 0/1. Typically set to 1
-    #define ESP_PANEL_BOARD_TOUCH_I2C_SDA_PULLUP        (0)     // 0/1. Typically set to 1
-    // CrowPanel Advance 5.0 specific I2C pins
+    #define ESP_PANEL_BOARD_TOUCH_I2C_SCL_PULLUP        (1)     // 0/1. Typically set to 1
+    #define ESP_PANEL_BOARD_TOUCH_I2C_SDA_PULLUP        (1)     // 0/1. Typically set to 1
     #define ESP_PANEL_BOARD_TOUCH_I2C_IO_SCL            (16)    // Your hardware: GPIO_NUM_16
     #define ESP_PANEL_BOARD_TOUCH_I2C_IO_SDA            (15)    // Your hardware: GPIO_NUM_15
 #endif
     /* For panel */
-    #define ESP_PANEL_BOARD_TOUCH_I2C_ADDRESS           (0x5D)  // CrowPanel 5.0 GT911 specific address
+    #define ESP_PANEL_BOARD_TOUCH_I2C_ADDRESS           (0)     // Typically set to 0 to use the default address.
                                                                 // - For touchs with only one address, set to 0
                                                                 // - For touchs with multiple addresses, set to 0 or
                                                                 //   the address. Like GT911, there are two addresses:
@@ -254,7 +223,7 @@
  */
 #define ESP_PANEL_BOARD_TOUCH_RST_IO            (-1)    // Reset pin, -1 if not used
 #define ESP_PANEL_BOARD_TOUCH_RST_LEVEL         (0)     // Reset active level, 0: low, 1: high
-#define ESP_PANEL_BOARD_TOUCH_INT_IO            (-1)    // Interrupt pin, -1 if not used
+#define ESP_PANEL_BOARD_TOUCH_INT_IO            (1)     // Interrupt pin, -1 if not used
 #define ESP_PANEL_BOARD_TOUCH_INT_LEVEL         (0)     // Interrupt active level, 0: low, 1: high
 
 #endif // ESP_PANEL_BOARD_USE_TOUCH
@@ -272,11 +241,109 @@
 #if ESP_PANEL_BOARD_USE_BACKLIGHT
 /**
  * @brief Backlight control type selection
- * 
- * Using CUSTOM type for STC8H1K28 microcontroller control via I2C (address 0x30)
- * CrowPanel Advance 5.0 V1.1+ uses STC8H1K28 for backlight control
  */
 #define ESP_PANEL_BOARD_BACKLIGHT_TYPE          (ESP_PANEL_BACKLIGHT_TYPE_CUSTOM)
+
+#if (ESP_PANEL_BOARD_BACKLIGHT_TYPE == ESP_PANEL_BACKLIGHT_TYPE_SWITCH_GPIO) || \
+    (ESP_PANEL_BOARD_BACKLIGHT_TYPE == ESP_PANEL_BACKLIGHT_TYPE_SWITCH_EXPANDER) || \
+    (ESP_PANEL_BOARD_BACKLIGHT_TYPE == ESP_PANEL_BACKLIGHT_TYPE_PWM_LEDC)
+
+    /**
+     * @brief Backlight control pin configuration
+     */
+    #define ESP_PANEL_BOARD_BACKLIGHT_IO        (2)    // Output GPIO pin number
+    #define ESP_PANEL_BOARD_BACKLIGHT_ON_LEVEL  (1)     // Active level, 0: low, 1: high
+
+#endif // ESP_PANEL_BOARD_BACKLIGHT_TYPE
+
+/**
+ * @brief Backlight idle state configuration (0/1)
+ *
+ * Set to 1 if want to turn off the backlight after initializing. Otherwise, the backlight will be on.
+ */
+#define ESP_PANEL_BOARD_BACKLIGHT_IDLE_OFF      (0)
+
+#endif // ESP_PANEL_BOARD_USE_BACKLIGHT
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////// Please update the following macros to configure the IO expander //////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief IO expander configuration flag (0/1)
+ *
+ * Set to `1` to enable IO expander support, `0` to disable
+ */
+#define ESP_PANEL_BOARD_USE_EXPANDER            (0)
+
+#if ESP_PANEL_BOARD_USE_EXPANDER
+/**
+ * @brief IO expander chip selection
+ */
+#define ESP_PANEL_BOARD_EXPANDER_CHIP           TCA95XX_8BIT
+
+/**
+ * @brief IO expander I2C bus parameters configuration
+ */
+/**
+ * If set to 1, the bus will skip to initialize the corresponding host. Users need to initialize the host in advance.
+ *
+ * For drivers which created by this library, even if they use the same host, the host will be initialized only once.
+ * So it is not necessary to set the macro to `1`. For other devices, please set the macro to `1` ensure that the
+ * host is initialized only once.
+ */
+#define ESP_PANEL_BOARD_EXPANDER_SKIP_INIT_HOST     (0)     // 0/1
+/* For general */
+#define ESP_PANEL_BOARD_EXPANDER_I2C_HOST_ID        (0)     // Typically set to 0
+/* For host */
+#if !ESP_PANEL_BOARD_EXPANDER_SKIP_INIT_HOST
+#define ESP_PANEL_BOARD_EXPANDER_I2C_CLK_HZ         (400 * 1000)
+                                                            // Typically set to 400K
+#define ESP_PANEL_BOARD_EXPANDER_I2C_SCL_PULLUP     (1)     // 0/1. Typically set to 1
+#define ESP_PANEL_BOARD_EXPANDER_I2C_SDA_PULLUP     (1)     // 0/1. Typically set to 1
+#define ESP_PANEL_BOARD_EXPANDER_I2C_IO_SCL         (16)
+#define ESP_PANEL_BOARD_EXPANDER_I2C_IO_SDA         (15)
+#endif // ESP_PANEL_BOARD_EXPANDER_SKIP_INIT_HOST
+/* For device */
+#define ESP_PANEL_BOARD_EXPANDER_I2C_ADDRESS        (0x18)  // The actual I2C address. Even for the same model of IC,
+                                                            // the I2C address may be different, and confirmation based on
+                                                            // the actual hardware connection is required
+#endif // ESP_PANEL_BOARD_USE_EXPANDER
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////// Please utilize the following macros to execute any additional code if required /////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Pre-begin function for backlight initialization
+ * Initialize STC8H1K28 microcontroller before backlight framework starts
+ *
+ * @param[in] p Pointer to the board object
+ * @return true on success, false on failure
+ */
+#define ESP_PANEL_BOARD_BACKLIGHT_PRE_BEGIN_FUNCTION(p) \
+    {  \
+        ESP_LOGI("CrowPanel", "PRE_BEGIN: Initializing STC8H1K28 backlight controller..."); \
+        \
+        /* Wait for I2C bus to be ready (initialized by touch controller) */ \
+        vTaskDelay(pdMS_TO_TICKS(100)); \
+        \
+        /* Test communication with STC8H1K28 */ \
+        i2c_cmd_handle_t cmd = i2c_cmd_link_create(); \
+        if (cmd != NULL) { \
+            i2c_master_start(cmd); \
+            i2c_master_write_byte(cmd, (0x30 << 1) | I2C_MASTER_WRITE, true); \
+            i2c_master_write_byte(cmd, 0x05, true); /* Send power-on command */ \
+            i2c_master_stop(cmd); \
+            esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS); \
+            i2c_cmd_link_delete(cmd); \
+            \
+            if (ret == ESP_OK) { \
+                ESP_LOGI("CrowPanel", "PRE_BEGIN: STC8H1K28 backlight controller initialized successfully"); \
+            } else { \
+                ESP_LOGW("CrowPanel", "PRE_BEGIN: STC8H1K28 communication failed: %s", esp_err_to_name(ret)); \
+            } \
+        } \
+        return true; \
+    }
 
 /**
  * @brief Custom backlight control function for STC8H1K28
@@ -287,7 +354,8 @@
  */
 #define ESP_PANEL_BOARD_BACKLIGHT_CUSTOM_FUNCTION(percent, user_data) \
     { \
-        ESP_LOGI("CrowPanel", "Setting STC8H1K28 backlight to %d%%", percent); \
+        ESP_LOGI("CrowPanel", "CUSTOM: Setting STC8H1K28 backlight to %d%%", percent); \
+        \
         /* Map percentage (0-100) to STC8H1K28 values (0x05-0x10) */ \
         uint8_t brightness_cmd; \
         if (percent == 0) { \
@@ -321,234 +389,6 @@
         return (ret == ESP_OK); \
     }
 
-/**
- * @brief Post-begin function for backlight initialization
- * Sets initial backlight brightness to maximum
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-#define ESP_PANEL_BOARD_BACKLIGHT_POST_BEGIN_FUNCTION(p) \
-    { \
-        ESP_LOGI("CrowPanel", "Initializing STC8H1K28 backlight controller..."); \
-        /* Wait for I2C bus to be ready (shared with GT911 touch) */ \
-        vTaskDelay(pdMS_TO_TICKS(100)); \
-        \
-        /* Set initial brightness to maximum (100%) */ \
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create(); \
-        if (cmd != NULL) { \
-            i2c_master_start(cmd); \
-            i2c_master_write_byte(cmd, (0x30 << 1) | I2C_MASTER_WRITE, true); \
-            i2c_master_write_byte(cmd, 0x10, true); /* Maximum brightness */ \
-            i2c_master_stop(cmd); \
-            esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS); \
-            i2c_cmd_link_delete(cmd); \
-            if (ret == ESP_OK) { \
-                ESP_LOGI("CrowPanel", "STC8H1K28 backlight initialized successfully"); \
-            } \
-        } \
-        return true; \
-    }
-#endif // ESP_PANEL_BOARD_USE_BACKLIGHT
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////// Please update the following macros to configure the IO expander //////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * @brief IO expander configuration flag (0/1)
- *
- * Set to `1` to enable IO expander support, `0` to disable
- * 
- * CrowPanel Advance 5.0 does not use an IO expander like the 7.0" version
- */
-#define ESP_PANEL_BOARD_USE_EXPANDER            (0)
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////// Please utilize the following macros to execute any additional code if required /////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * @brief Pre-begin function for board initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_PRE_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Post-begin function for board initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_POST_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Pre-delete function for board initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_PRE_DEL_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Post-delete function for board initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_POST_DEL_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Pre-begin function for IO expander initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_EXPANDER_PRE_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Post-begin function for IO expander initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_EXPANDER_POST_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Pre-begin function for LCD initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_LCD_PRE_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Post-begin function for LCD initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_LCD_POST_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Pre-begin function for touch panel initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_TOUCH_PRE_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Post-begin function for touch panel initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_TOUCH_POST_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Pre-begin function for backlight initialization
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-/*
-#define ESP_PANEL_BOARD_BACKLIGHT_PRE_BEGIN_FUNCTION(p) \
-    {  \
-        auto board = static_cast<Board *>(p);  \
-        return true;    \
-    }
-*/
-
-/**
- * @brief Post-begin function for backlight initialization
- * Sets initial backlight brightness to maximum
- *
- * @param[in] p Pointer to the board object
- * @return true on success, false on failure
- */
-#define ESP_PANEL_BOARD_BACKLIGHT_POST_BEGIN_FUNCTION(p) \
-    { \
-        ESP_LOGI("CrowPanel", "Initializing STC8H1K28 backlight controller..."); \
-        /* Wait for I2C bus to be ready (shared with GT911 touch) */ \
-        vTaskDelay(pdMS_TO_TICKS(100)); \
-        \
-        /* Set initial brightness to maximum (100%) */ \
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create(); \
-        if (cmd != NULL) { \
-            i2c_master_start(cmd); \
-            i2c_master_write_byte(cmd, (0x30 << 1) | I2C_MASTER_WRITE, true); \
-            i2c_master_write_byte(cmd, 0x10, true); /* Maximum brightness */ \
-            i2c_master_stop(cmd); \
-            esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS); \
-            i2c_cmd_link_delete(cmd); \
-            if (ret == ESP_OK) { \
-                ESP_LOGI("CrowPanel", "STC8H1K28 backlight initialized successfully"); \
-            } \
-        } \
-        return true; \
-    }
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// File Version ///////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -560,7 +400,7 @@
  * 3. Patch version mismatch: No impact on functionality
  */
 #define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_MAJOR 1
-#define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_MINOR 1
+#define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_MINOR 0
 #define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_PATCH 0
 
 // *INDENT-ON*
